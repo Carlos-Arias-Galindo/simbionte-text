@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simbiontes — Arte Textual Generativo</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1f0f;
+      --accent: #7bc47e;
+      --text: #c5ddc6;
+      --tag: #1a3a1c;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Georgia, serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+      transition: background 0.5s, color 0.5s;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .subtitulo {
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: normal;
+      color: var(--accent);
+    }
+
+    .autores {
+      font-size: 0.65rem;
+      opacity: 0.5;
+      margin-top: 0.3rem;
+      letter-spacing: 0.15em;
+    }
+
+    /* Selector de modo textual */
+    .modos {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .modo-btn {
+      padding: 0.4rem 1rem;
+      border-radius: 2rem;
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      font-family: inherit;
+      transition: all 0.3s;
+    }
+
+    .modo-btn.activo {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    /* Toggle IA */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.72rem;
+    }
+
+    .toggle-track {
+      width: 42px;
+      height: 22px;
+      border-radius: 11px;
+      background: var(--tag);
+      border: 1px solid var(--accent);
+      cursor: pointer;
+      position: relative;
+      transition: background 0.3s;
+    }
+
+    .toggle-track.on { background: var(--accent); }
+
+    .toggle-thumb {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      transition: left 0.3s, background 0.3s;
+    }
+
+    .toggle-track.on .toggle-thumb {
+      left: 21px;
+      background: var(--bg);
+    }
+
+    /* Panel curatorial */
+    .curatorial {
+      max-width: 680px;
+      width: 100%;
+      margin-bottom: 1.5rem;
+      display: none;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .curatorial.visible { display: flex; }
+
+    .curatorial label {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      opacity: 0.8;
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+
+    .curatorial textarea {
+      width: 100%;
+      background: var(--tag);
+      border: 1px solid var(--accent);
+      border-radius: 0.4rem;
+      color: var(--text);
+      font-family: Georgia, serif;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      padding: 0.75rem;
+      resize: vertical;
+      outline: none;
+      opacity: 0.85;
+    }
+
+    .curatorial textarea:focus { opacity: 1; }
+
+    /* Enunciado principal */
+    .enunciado-wrap {
+      max-width: 680px;
+      width: 100%;
+      background: var(--tag);
+      border-left: 3px solid var(--accent);
+      border-radius: 0.5rem;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    #enunciado-texto {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      text-align: center;
+      font-style: italic;
+    }
+
+    .fav-btn {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2rem;
+      color: var(--text);
+      opacity: 0.4;
+      transition: all 0.2s;
+    }
+
+    .fav-btn.marcado { color: var(--accent); opacity: 1; }
+
+    /* Botón generar */
+    #btn-generar {
+      padding: 0.7rem 2.5rem;
+      border-radius: 2rem;
+      background: var(--accent);
+      color: var(--bg);
+      border: 1px solid var(--accent);
+      cursor: pointer;
+      font-size: 0.85rem;
+      letter-spacing: 0.15em;
+      font-family: inherit;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      transition: opacity 0.3s;
+    }
+
+    #btn-generar:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Historial */
+    .seccion-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      opacity: 0.6;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+
+    #historial, #coleccion {
+      max-width: 680px;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+
+    .item {
+      padding: 0.75rem 1rem;
+      border-radius: 0.3rem;
+      background: var(--tag);
+      margin-bottom: 0.4rem;
+      font-size: 0.8rem;
+      line-height: 1.6;
+      font-style: italic;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .item-fav {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text);
+      font-size: 1rem;
+      opacity: 0.3;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    .item-fav.marcado { color: var(--accent); opacity: 1; }
+
+    /* Nav favoritos */
+    #btn-coleccion {
+      background: none;
+      border: 1px solid var(--accent);
+      border-radius: 2rem;
+      color: var(--accent);
+      padding: 0.4rem 1.2rem;
+      cursor: pointer;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      font-family: inherit;
+      text-transform: uppercase;
+      opacity: 0.8;
+      margin-bottom: 2rem;
+    }
+
+    /* Spinner */
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .spinner { text-align: center; animation: pulse 1.5s infinite; font-size: 1.5rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="subtitulo">Arte Textual Generativo</div>
+  <h1>Simbiontes</h1>
+  <div class="autores">Margulis · Haraway · Maturana · Latour</div>
+</header>
+
+<!-- Modos textuales -->
+<div class="modos">
+  <button class="modo-btn activo" data-modo="cientifico">Científico</button>
+  <button class="modo-btn" data-modo="filosofico">Filosófico</button>
+  <button class="modo-btn" data-modo="poetico">Poético</button>
+</div>
+
+<!-- Toggle IA -->
+<div class="toggle-row">
+  <span id="label-plantillas">Plantillas</span>
+  <div class="toggle-track" id="toggle">
+    <div class="toggle-thumb"></div>
+  </div>
+  <span id="label-ia" style="opacity:0.4">IA (Claude)</span>
+</div>
+
+<!-- Panel curatorial (solo visible en modo IA) -->
+<div class="curatorial" id="panel-curatorial">
+  <div>
+    <label>Fragmentos de texto fuente (papers, libros, citas)</label>
+    <textarea id="fragmentos" rows="5" placeholder="Pega aquí pasajes de Margulis, Haraway, un paper de simbiosis... La IA los usará como material base."></textarea>
+  </div>
+  <div>
+    <label>Instrucciones curatoriales</label>
+    <textarea id="instrucciones" rows="3" placeholder="Ej: usar sintaxis de hipótesis, evitar metáforas, basarse en el concepto de holobionte, tono más ambiguo..."></textarea>
+  </div>
+</div>
+
+<!-- Enunciado principal -->
+<div class="enunciado-wrap" id="enunciado-wrap">
+  <p id="enunciado-texto"></p>
+  <button class="fav-btn" id="fav-principal" title="Guardar">◈</button>
+</div>
+
+<!-- Botón generar -->
+<button id="btn-generar">Generar enunciado</button>
+
+<!-- Historial -->
+<div id="historial">
+  <div class="seccion-label">Historial</div>
+  <div id="historial-items"></div>
+</div>
+
+<!-- Colección -->
+<div id="coleccion" style="display:none">
+  <div class="seccion-label" id="coleccion-label">Colección guardada</div>
+  <div id="coleccion-items"></div>
+</div>
+
+<button id="btn-coleccion">Colección (0)</button>
+
+<script>
+// ─── Estado ───────────────────────────────────────────────
+const state = {
+  modo: "cientifico",
+  usarIA: false,
+  enunciados: [],
+  favoritos: [],
+  vistaColeccion: false,
+  cargando: false,
+};
+
+// ─── Paletas ──────────────────────────────────────────────
+const paletas = {
+  filosofico: { bg: "#0f1923", accent: "#7eb8c9", text: "#c8dde6", tag: "#1e3a4a" },
+  cientifico: { bg: "#0d1f0f", accent: "#7bc47e", text: "#c5ddc6", tag: "#1a3a1c" },
+  poetico:    { bg: "#1a0f23", accent: "#b87ec9", text: "#d8c5e6", tag: "#311a4a" },
+};
+
+function aplicarPaleta(modo) {
+  const p = paletas[modo];
+  document.documentElement.style.setProperty("--bg", p.bg);
+  document.documentElement.style.setProperty("--accent", p.accent);
+  document.documentElement.style.setProperty("--text", p.text);
+  document.documentElement.style.setProperty("--tag", p.tag);
+}
+
+// ─── Plantillas ───────────────────────────────────────────
+const data = {
+  filosofico: {
+    plantillas: [
+      "Todo {sujeto} es, en su fundamento, una {relacion} con {otro}.",
+      "La {propiedad} no pertenece al {sujeto} sino al espacio entre {sujeto} y {otro}.",
+      "El {sujeto} no precede a su {relacion} con {otro}; emerge de ella.",
+      "No hay {sujeto} sin {otro}: la individuación es siempre un proceso de {relacion}.",
+      "Llamamos {sujeto} a aquello que ya no puede distinguirse de su {otro}.",
+    ],
+    sujeto: ["simbionte","organismo","huésped","parásito","holobionte","líquen","mitocondria","microbiota"],
+    otro: ["su huésped","el ambiente","la bacteria","el hongo","la especie acompañante","su simbionte"],
+    relacion: ["simbiosis","cohabitación","dependencia mutua","entrelazamiento","co-evolución","alianza metabólica"],
+    propiedad: ["autonomía","identidad","límite","individuación","agencia","soberanía"],
+  },
+  cientifico: {
+    plantillas: [
+      "Se observa que {sujeto} modifica la expresión génica de {otro} mediante {mecanismo}.",
+      "La transferencia de {sustancia} entre {sujeto} y {otro} regula la {funcion}.",
+      "Estudios en {ecosistema} demuestran que {sujeto} no puede completar su ciclo vital sin {otro}.",
+      "Se propone que {sujeto} y {otro} constituyen una unidad funcional denominada {unidad}.",
+    ],
+    sujeto: ["Symbiodinium","Rhizobium leguminosarum","Wolbachia pipientis","Buchnera aphidicola","Mixotricha paradoxa"],
+    otro: ["su célula huésped","el tejido vegetal","el insecto vector","la bacteria endosimbionte","el hongo micorrízico"],
+    mecanismo: ["señales químicas de quorum sensing","intercambio de metabolitos secundarios","transferencia horizontal de genes"],
+    sustancia: ["nitrógeno fijado","lípidos esenciales","aminoácidos no sintetizables"],
+    funcion: ["homeostasis del huésped","respuesta inmune adaptativa","tolerancia al estrés térmico"],
+    ecosistema: ["arrecifes de coral","nódulos radiculares","intestino de termita"],
+    unidad: ["holobionte","consorcio metabólico","unidad evolutiva mínima"],
+  },
+  poetico: {
+    plantillas: [
+      "Somos {sujeto}: el plural que aprendió a decir yo.",
+      "{otro} me habita. Yo lo {verbo}. Esto se llama {nombre}.",
+      "El {sujeto} no termina donde termina su piel; continúa en {otro}.",
+      "¿Dónde empieza {sujeto}? Donde {otro} lo permite.",
+    ],
+    sujeto: ["holobionte","simbionte","el líquen","la coral","el cuerpo humano","la célula eucariota"],
+    otro: ["la bacteria que nos precedió","el hongo que nos sostiene","la mitocondria que respira por nosotros","el parásito que nos moldea"],
+    verbo: ["alojo","transpiro","traduzco","metabolizo","hospedo"],
+    nombre: ["simbiosis","holobiosis","el pacto metabólico","la alianza sin palabras","entrelazamiento"],
+  },
+};
+
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+function generarPlantilla(modo) {
+  const d = data[modo];
+  const tpl = pick(d.plantillas);
+  return tpl.replace(/\{(\w+)\}/g, (_, k) => d[k] ? pick(d[k]) : `[${k}]`);
+}
+
+async function generarIA(modo) {
+  const fragmentos = document.getElementById("fragmentos").value;
+  const instrucciones = document.getElementById("instrucciones").value;
+  const res = await fetch("/generar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ modo, fragmentos, instrucciones }),
+  });
+  if (!res.ok) throw new Error("Error del servidor");
+  const json = await res.json();
+  return json.texto;
+}
+
+// ─── Render ───────────────────────────────────────────────
+function renderEnunciado(txt) {
+  const el = document.getElementById("enunciado-texto");
+  const btn = document.getElementById("fav-principal");
+  el.textContent = txt;
+  btn.classList.toggle("marcado", state.favoritos.includes(txt));
+  btn.dataset.txt = txt;
+}
+
+function renderHistorial() {
+  const cont = document.getElementById("historial-items");
+  const hist = state.enunciados.slice(1);
+  document.getElementById("historial").style.display = hist.length ? "block" : "none";
+  cont.innerHTML = hist.map((e, i) =>
+    `<div class="item" style="opacity:${0.5 + 0.4 * (1 - i / hist.length)}">
+      <span>${e}</span>
+      <button class="item-fav ${state.favoritos.includes(e) ? 'marcado' : ''}" data-txt="${e.replace(/"/g,'&quot;')}">◈</button>
+    </div>`
+  ).join("");
+}
+
+function renderColeccion() {
+  const cont = document.getElementById("coleccion-items");
+  document.getElementById("coleccion-label").textContent =
+    `Colección guardada — ${state.favoritos.length} enunciado${state.favoritos.length !== 1 ? "s" : ""}`;
+  cont.innerHTML = state.favoritos.length === 0
+    ? `<p style="opacity:0.5;font-style:italic;font-size:0.85rem">Aún no has guardado ningún enunciado. Usa ◈ para marcarlos.</p>`
+    : state.favoritos.map(f =>
+        `<div class="item" style="border-left:2px solid var(--accent)">
+          <span>${f}</span>
+          <button class="item-fav marcado" data-txt="${f.replace(/"/g,'&quot;')}">✕</button>
+        </div>`
+      ).join("");
+}
+
+function renderTodo() {
+  if (state.enunciados.length) renderEnunciado(state.enunciados[0]);
+  renderHistorial();
+  renderColeccion();
+  document.getElementById("btn-coleccion").textContent =
+    state.vistaColeccion ? "← Volver" : `Colección (${state.favoritos.length})`;
+  document.getElementById("historial").style.display =
+    (!state.vistaColeccion && state.enunciados.length > 1) ? "block" : "none";
+  document.getElementById("coleccion").style.display = state.vistaColeccion ? "block" : "none";
+  document.getElementById("enunciado-wrap").style.display = state.vistaColeccion ? "none" : "flex";
+  document.getElementById("btn-generar").style.display = state.vistaColeccion ? "none" : "inline-block";
+}
+
+// ─── Generar ──────────────────────────────────────────────
+async function generar() {
+  if (state.cargando) return;
+  state.cargando = true;
+  state.vistaColeccion = false;
+  const btn = document.getElementById("btn-generar");
+  const el = document.getElementById("enunciado-texto");
+  btn.disabled = true;
+  btn.textContent = "Generando...";
+  el.innerHTML = `<div class="spinner">◈</div>`;
+
+  try {
+    const txt = state.usarIA
+      ? await generarIA(state.modo)
+      : generarPlantilla(state.modo);
+    state.enunciados = [txt, ...state.enunciados].slice(0, 12);
+  } catch {
+    state.enunciados = ["[Error al generar. Verifica el servidor.]", ...state.enunciados].slice(0, 12);
+  } finally {
+    state.cargando = false;
+    btn.disabled = false;
+    btn.textContent = "Generar enunciado";
+    renderTodo();
+  }
+}
+
+// ─── Eventos ──────────────────────────────────────────────
+document.querySelectorAll(".modo-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    state.modo = btn.dataset.modo;
+    document.querySelectorAll(".modo-btn").forEach(b => b.classList.remove("activo"));
+    btn.classList.add("activo");
+    aplicarPaleta(state.modo);
+    state.enunciados = [generarPlantilla(state.modo)];
+    state.vistaColeccion = false;
+    renderTodo();
+  });
+});
+
+document.getElementById("toggle").addEventListener("click", () => {
+  state.usarIA = !state.usarIA;
+  const t = document.getElementById("toggle");
+  t.classList.toggle("on", state.usarIA);
+  document.getElementById("label-plantillas").style.opacity = state.usarIA ? "0.4" : "1";
+  document.getElementById("label-ia").style.opacity = state.usarIA ? "1" : "0.4";
+  document.getElementById("panel-curatorial").classList.toggle("visible", state.usarIA);
+});
+
+document.getElementById("btn-generar").addEventListener("click", generar);
+
+document.getElementById("btn-coleccion").addEventListener("click", () => {
+  state.vistaColeccion = !state.vistaColeccion;
+  renderTodo();
+});
+
+document.getElementById("fav-principal").addEventListener("click", (e) => {
+  const txt = e.currentTarget.dataset.txt;
+  if (!txt) return;
+  const i = state.favoritos.indexOf(txt);
+  if (i >= 0) state.favoritos.splice(i, 1);
+  else state.favoritos.push(txt);
+  renderTodo();
+});
+
+document.addEventListener("click", (e) => {
+  if (e.target.classList.contains("item-fav")) {
+    const txt = e.target.dataset.txt;
+    const i = state.favoritos.indexOf(txt);
+    if (i >= 0) state.favoritos.splice(i, 1);
+    else state.favoritos.push(txt);
+    renderTodo();
+  }
+});
+
+// ─── Init ─────────────────────────────────────────────────
+aplicarPaleta(state.modo);
+state.enunciados = [generarPlantilla(state.modo)];
+renderTodo();
+</script>
+</body>
+</html>
